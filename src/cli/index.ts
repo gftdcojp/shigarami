@@ -15,6 +15,7 @@ import { IncidenceGraphCheckerService } from '../services/incidence-graph-checke
 import type { IncidenceGraph } from '../types/incidence-graph.js';
 import fs from 'fs/promises';
 import path from 'path';
+import type { CompatibilityIssueSource } from '../types/compatibility.js';
 
 export interface CLIOptions {
   node?: string;
@@ -24,12 +25,13 @@ export interface CLIOptions {
   limit?: string;
   verified?: boolean;
   react?: string;
-  libs?: string;
+  libs?: string; // Reverted to string for simplicity as kaito-commands generates string
   error?: string;
   workaround?: string;
   output?: string;
   projectRoot?: string;
   rulesFile?: string; // For incidence graph checker
+  source?: CompatibilityIssueSource;
 }
 
 export class CLI {
@@ -294,7 +296,7 @@ export class CLI {
       workaround: options.workaround,
       reportedAt: new Date().toISOString(),
       verified: options.verified || false,
-      source: 'manual',
+      source: options.source || 'manual',
     };
 
     try {

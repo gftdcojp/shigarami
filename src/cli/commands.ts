@@ -571,12 +571,29 @@ export const reportIssueCommand = (
     // Parse additional libraries
     let libs: Record<string, string> = {};
     if (options.libs) {
-      libs = yield* _(
-        Effect.try({
-          try: () => JSON.parse(options.libs!),
-          catch: (e) => new Error(`Invalid libs JSON format: ${e}`),
-        }),
-      );
+      if (typeof options.libs === 'string') {
+        try {
+          // Assuming libs can be a comma-separated string of "name@version" pairs
+          // or a JSON string. Prioritize comma-separated for CLI simplicity.
+          if (options.libs.includes('@') || options.libs.includes(',')) {
+            options.libs.split(',').forEach(lib => {
+              const parts = lib.trim().split('@');
+              if (parts.length === 2) {
+                libs[parts[0]] = parts[1];
+              }
+            });
+          } else {
+            // Fallback to JSON parsing if it's not a simple list
+            libs = JSON.parse(options.libs);
+          }
+        } catch (e) {
+          yield* _(Effect.fail(new Error(`Invalid libs format: ${e}`)));
+        }
+      } else if (typeof options.libs === 'object') {
+        libs = options.libs;
+      } else {
+        yield* _(Effect.fail(new Error(`Invalid libs format: Expected string or object`)));
+      }
     }
 
     const db = yield* _(CompatibilityDatabase);

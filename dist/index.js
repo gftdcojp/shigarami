@@ -15,9 +15,8 @@ import { setupWebServer } from './web/server.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
 import { checkGraphCommand, statsCommand, searchCommand, exportCommand, fetchCompatCommand, storePutCommand, storeGetCommand, storeListCommand, storeStatsCommand, reportIssueCommand, resolveDependenciesCommand, derivationHashCommand, ShigaramiCliLive } from './cli/commands.js';
-import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand, KaitoLive } from './cli/kaito.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito-commands.js';
 import { Command } from 'commander';
-import { Layer } from 'effect';
 async function main() {
     const db = new CompatibilityDatabaseManager();
     const store = new PropertyGraphStore('@store');
@@ -196,8 +195,8 @@ async function main() {
     program
         .command('store-put-effect')
         .description('Store compatibility data in the Nix-like store (Effect-TS version)')
-        .action((options) => {
-        const command = storePutCommand(options);
+        .action(() => {
+        const command = storePutCommand();
         const runnable = Effect.provide(command, ShigaramiCliLive);
         NodeRuntime.runMain(runnable);
     });
@@ -370,7 +369,7 @@ async function main() {
         .option('--report', 'Report result after running')
         .action((options) => {
         const command = kaitoRunCommand(options);
-        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        const runnable = Effect.provide(command, ShigaramiCliLive);
         NodeRuntime.runMain(runnable);
     });
     kaito
@@ -381,7 +380,7 @@ async function main() {
         .option('--lib <pkg@ver>', 'Additional library')
         .action((name, options) => {
         const command = kaitoNewCommand(name, options);
-        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        const runnable = Effect.provide(command, ShigaramiCliLive);
         NodeRuntime.runMain(runnable);
     });
     kaito
@@ -389,7 +388,7 @@ async function main() {
         .description('Report an experiment result to the database')
         .action((experimentHash) => {
         const command = kaitoReportCommand({ experimentHash });
-        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        const runnable = Effect.provide(command, ShigaramiCliLive);
         NodeRuntime.runMain(runnable);
     });
     program.addCommand(kaito);

@@ -1,0 +1,16 @@
+{
+  "name": "Test Next.js 15 with NextAuth",
+  "template": "nextjs-app",
+  "environment": {
+    "node": "20.x",
+    "nodePackageManager": "npm@10.x"
+  },
+  "dependencies": {
+    "framework": "next@15.0.0",
+    "react": "19.0.0",
+    "libs": {
+      "next-auth": "5.0.0-beta.4"
+    }
+  },
+  "script": "build"
+}

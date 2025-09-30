@@ -9,7 +9,7 @@
  */
 
 import { program } from 'commander';
-import { Effect } from 'effect';
+import { Effect, Layer } from 'effect';
 import { NodeRuntime } from '@effect/platform-node';
 import { CLI } from './cli/index.js';
 import type { CLIOptions } from './cli/index.js';
@@ -33,9 +33,8 @@ import {
   derivationHashCommand,
   ShigaramiCliLive
 } from './cli/commands.js';
-import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand, KaitoLive } from './cli/kaito.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito-commands.js';
 import { Command } from 'commander';
-import { Layer } from 'effect';
 
 async function main() {
   const db = new CompatibilityDatabaseManager();
@@ -234,8 +233,8 @@ async function main() {
   program
     .command('store-put-effect')
     .description('Store compatibility data in the Nix-like store (Effect-TS version)')
-    .action((options: any) => {
-      const command = storePutCommand(options);
+    .action(() => {
+      const command = storePutCommand();
       const runnable = Effect.provide(command, ShigaramiCliLive);
       NodeRuntime.runMain(runnable);
     });

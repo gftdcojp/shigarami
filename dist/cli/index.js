@@ -245,7 +245,7 @@ export class CLI {
             workaround: options.workaround,
             reportedAt: new Date().toISOString(),
             verified: options.verified || false,
-            source: 'manual',
+            source: options.source || 'manual',
         };
         try {
             await this.db.saveIssue(issue);

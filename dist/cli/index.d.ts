@@ -6,6 +6,7 @@
  * Provides commands for checking compatibility, reporting issues, and managing data.
  */
 import type { CompatibilityDatabaseManager } from '../data/database.js';
+import type { CompatibilityIssueSource } from '../types/compatibility.js';
 export interface CLIOptions {
     node?: string;
     packageManager?: 'npm' | 'yarn' | 'pnpm';
@@ -20,6 +21,7 @@ export interface CLIOptions {
     output?: string;
     projectRoot?: string;
     rulesFile?: string;
+    source?: CompatibilityIssueSource;
 }
 export declare class CLI {
     private db;
