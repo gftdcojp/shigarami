@@ -325,8 +325,8 @@ export class PropertyGraphConverter {
             to: libVid,
             labels: [relationshipType, 'Involves'],
             properties: {
-              version: version,
-              testedAt: issue.reportedAt,
+              version: version as string,
+              testedAt: issue.reportedAt as string,
             },
             created: issue.reportedAt,
             weight: issue.status === 'fail' ? 0.8 :
@@ -342,7 +342,6 @@ export class PropertyGraphConverter {
         if (!vertices.find(v => v.id === reactVid)) {
           vertices.push({
             id: reactVid,
-            type: 'environment',
             labels: ['Environment', 'React'],
             properties: {
               component: 'react',
@@ -458,7 +457,9 @@ export class PropertyGraphConverter {
         .forEach(incident => {
           const libVertex = graph.v.find(v => v.id === incident.to);
           if (libVertex && libVertex.labels.includes('Library')) {
-            libs[libVertex.properties.name] = incident.properties.version;
+            const libName = String(libVertex.properties.name);
+            const libVersion = String(incident.properties.version);
+            libs[libName] = libVersion;
           }
         });
 
@@ -999,7 +1000,8 @@ export class PropertyGraphQueryEngine {
       // Check properties
       if (filter.properties) {
         for (const [key, query] of Object.entries(filter.properties)) {
-          if (!this.matchesPropertyQuery(v.properties[key], query)) {
+          const propValue = v.properties[key];
+          if (!this.matchesPropertyQuery(propValue, query)) {
             return false;
           }
         }
@@ -1022,7 +1024,8 @@ export class PropertyGraphQueryEngine {
 
       if (filter.properties) {
         for (const [key, query] of Object.entries(filter.properties)) {
-          if (!this.matchesPropertyQuery(i.properties[key], query)) return false;
+          const propValue = i.properties[key];
+          if (!this.matchesPropertyQuery(propValue, query)) return false;
         }
       }
 
@@ -1048,7 +1051,8 @@ export class PropertyGraphQueryEngine {
 
       if (filter.properties) {
         for (const [key, query] of Object.entries(filter.properties)) {
-          if (!this.matchesPropertyQuery(e.properties[key], query)) return false;
+          const propValue = e.properties[key];
+          if (!this.matchesPropertyQuery(propValue, query)) return false;
         }
       }
 

@@ -109,7 +109,7 @@ export interface PropertyMeta {
  * Property Value Types
  * Flexible property value representation for property graph
  */
-export type PropertyValue = string | number | boolean | null | PropertyValue[] | Record<string, PropertyValue>;
+export type PropertyValue = string | number | boolean | null | PropertyValue[] | Record<string, any>;
 /**
  * Complete Property Graph: v,i,e,meta
  * Full property graph representation with rich metadata

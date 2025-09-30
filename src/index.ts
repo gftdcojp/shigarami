@@ -25,7 +25,7 @@ async function main() {
   await store.initialize();
 
   program
-    .name('depcompat')
+    .name('shigrami')
     .description('Dependency Compatibility Database - Context7-like system for tracking package conflicts')
     .version('0.1.0');
 
@@ -193,10 +193,10 @@ async function main() {
     });
 
   program
-    .command('derivation:hash')
+    .command('derivation-hash')
     .description('Compute derivation hash for given parameters')
     .option('-f, --framework <name>', 'Framework name')
-    .option('-v, --version <version>', 'Framework version')
+    .option('-V, --framework-version <version>', 'Framework version')
     .option('-r, --react <version>', 'React version')
     .option('-n, --node <version>', 'Node.js version')
     .option('-p, --package-manager <manager>', 'Package manager')
@@ -204,8 +204,8 @@ async function main() {
     .action(async (options: any) => {
       const builder = new DerivationBuilder();
 
-      if (options.framework && options.version) {
-        builder.framework(options.framework, options.version);
+      if (options.framework && options.frameworkVersion) {
+        builder.framework(options.framework, options.frameworkVersion);
       }
       if (options.react) builder.react(options.react);
       if (options.node) builder.node(options.node);
@@ -221,8 +221,8 @@ async function main() {
       }
 
       try {
-        const derivation = builder.build();
         const hash = builder.getHash();
+        const derivation = builder.build();
         console.log(`🔢 Derivation Hash: ${hash}`);
         console.log(`📋 Derivation: ${JSON.stringify(derivation, null, 2)}`);
       } catch (error) {
@@ -250,12 +250,12 @@ async function main() {
 
 // Handle process termination gracefully
 process.on('SIGINT', () => {
-  console.log('\nShutting down DepCompat...');
+  console.log('\nShutting down Shigrami...');
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-  console.log('\nShutting down DepCompat...');
+  console.log('\nShutting down Shigrami...');
   process.exit(0);
 });
 

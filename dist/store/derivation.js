@@ -116,7 +116,7 @@ export class NixStoreManager {
             return entry;
         }
         catch (error) {
-            if (error.code === 'ENOENT') {
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
                 return null; // Not found
             }
             throw error;
@@ -222,12 +222,14 @@ export class NixStoreManager {
                     await this.getResult(hash);
                 }
                 catch (error) {
-                    console.warn(`Failed to load ${hash}:`, error);
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    console.warn(`Failed to load ${hash}:`, errorMessage);
                 }
             }));
         }
         catch (error) {
-            console.warn('Failed to load store cache:', error);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            console.warn('Failed to load store cache:', errorMessage);
         }
     }
     async fsExists(filePath) {
@@ -307,6 +309,20 @@ export class DerivationBuilder {
         return this.derivation;
     }
     getHash() {
-        return NixStoreManager.computeDerivationHash(this.build());
+        // Create a partial derivation for hashing (without validation)
+        const partialDerivation = {
+            framework: this.derivation.framework,
+            react: this.derivation.react,
+            node: this.derivation.node,
+            packageManager: this.derivation.packageManager,
+            libraries: this.derivation.libraries,
+            environment: this.derivation.environment,
+            testScript: this.derivation.testScript,
+            // Exclude metadata from hash
+        };
+        if (!partialDerivation.framework) {
+            throw new Error('Framework is required for hash computation');
+        }
+        return NixStoreManager.computeDerivationHash(partialDerivation);
     }
 }

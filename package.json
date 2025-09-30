@@ -17,7 +17,8 @@
     "store:get": "node dist/index.js store:get",
     "store:list": "node dist/index.js store:list",
     "store:stats": "node dist/index.js store:stats",
-    "store:export": "node dist/index.js store:export"
+    "store:export": "node dist/index.js store:export",
+    "derivation-hash": "node dist/index.js derivation-hash"
   },
   "repository": {
     "type": "git",
