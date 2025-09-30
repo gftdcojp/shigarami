@@ -9,6 +9,8 @@
  */
 
 import { program } from 'commander';
+import { Effect } from 'effect';
+import { NodeRuntime } from '@effect/platform-node';
 import { CLI } from './cli/index.js';
 import type { CLIOptions } from './cli/index.js';
 import { CompatibilityDatabaseManager } from './data/database.js';
@@ -16,6 +18,7 @@ import { DepCompatMCPServer } from './mcp/server.js';
 import { setupWebServer } from './web/server.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
+import { checkGraphCommand, ShigaramiCliLive } from './cli/commands.js';
 
 async function main() {
   const db = new CompatibilityDatabaseManager();
@@ -98,7 +101,19 @@ async function main() {
       await cli.resolveDependencies(options);
     });
 
-  // New command for incidence graph checking
+  // New command for incidence graph checking (Effect-TS version)
+  program
+    .command('check-graph-effect')
+    .description('Check project compatibility using an incidence graph (Effect-TS version)')
+    .option('-p, --project-root <path>', 'Path to the project root directory')
+    .option('--rules-file <path>', 'Path to the compatibility rules JSON file')
+    .action((options: CLIOptions) => {
+      const command = checkGraphCommand(options);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  // Keep the old command for comparison if needed, or remove it.
   program
     .command('check-graph')
     .description('Check project compatibility using an incidence graph rules file')
