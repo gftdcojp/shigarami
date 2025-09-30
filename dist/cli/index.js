@@ -6,10 +6,96 @@
  * Provides commands for checking compatibility, reporting issues, and managing data.
  */
 import { table } from 'table';
+import { ResolverService } from '../services/resolver.js';
+import { GitHubStoreClient } from '../store/github-store.js';
+import { IncidenceGraphCheckerService } from '../services/incidence-graph-checker.js';
+import fs from 'fs/promises';
+import path from 'path';
 export class CLI {
     db;
     constructor(db) {
         this.db = db;
+    }
+    /**
+     * Check project compatibility using an incidence graph.
+     * Merkle DAG Edge: cli_tools -> incidence_graph_checker_service
+     */
+    async checkIncidenceGraph(options) {
+        const projectRoot = options.projectRoot || process.cwd();
+        const rulesFile = options.rulesFile || path.join(projectRoot, 'compat-rules.json');
+        console.log(`🔎 Running incidence graph check for project at: ${projectRoot}`);
+        console.log(`   Using rules from: ${rulesFile}`);
+        try {
+            // 1. Read and parse the rules file
+            const rulesContent = await fs.readFile(rulesFile, 'utf-8');
+            const graph = JSON.parse(rulesContent);
+            // 2. Read the project's package.json
+            const packageJsonPath = path.join(projectRoot, 'package.json');
+            const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+            const packageJson = JSON.parse(packageJsonContent);
+            // 3. Collect all dependencies
+            const installedPackages = new Map();
+            const allDependencies = {
+                ...(packageJson.dependencies || {}),
+                ...(packageJson.devDependencies || {}),
+                ...(packageJson.peerDependencies || {}),
+            };
+            for (const [name, version] of Object.entries(allDependencies)) {
+                installedPackages.set(name, version);
+            }
+            console.log(`   Found ${installedPackages.size} total dependencies.`);
+            // 4. Determine environment key
+            // TODO: Implement dynamic environment key detection.
+            // For now, using the one from the example.
+            const envKey = 'env:node20-linux-x64-glibc-2.35';
+            console.log(`   Using environment key: ${envKey}`);
+            // 5. Run the checker
+            const checker = new IncidenceGraphCheckerService();
+            const result = checker.check(graph, installedPackages, envKey);
+            // 6. Report results
+            if (result.violations.length === 0) {
+                console.log('\n✅ No compatibility violations found.');
+            }
+            else {
+                console.error(`\n❌ Found ${result.violations.length} compatibility violation(s):`);
+                console.log(JSON.stringify(result, null, 2));
+                process.exitCode = 1; // Set exit code to indicate failure
+            }
+        }
+        catch (error) {
+            if (error.code === 'ENOENT') {
+                console.error(`❌ Error: Could not find file at ${error.path}`);
+            }
+            else {
+                console.error('❌ An unexpected error occurred during compatibility check:', error);
+            }
+            process.exit(1);
+        }
+    }
+    /**
+     * Resolve project dependencies using the new resolver service.
+     */
+    async resolveDependencies(options) {
+        const projectRoot = options.projectRoot || process.cwd();
+        console.log(`🚀 Starting dependency resolution for project at: ${projectRoot}`);
+        // This is a placeholder for the actual store configuration.
+        // In a real application, this would come from a config file.
+        const storeClient = new GitHubStoreClient({
+            owner: 'junkawasaki', // Replace with the actual store owner
+            repo: 'dep-store', // Replace with the actual store repo
+        });
+        await storeClient.initialize();
+        const resolver = new ResolverService(storeClient);
+        try {
+            const lockFile = await resolver.resolveProject(projectRoot);
+            console.log('✅ Resolution successful!');
+            console.log(`   - Resolved ${Object.keys(lockFile.dependencies).length} dependencies.`);
+            // Further steps would involve fetching and linking packages.
+        }
+        catch (error) {
+            console.error('❌ Resolution failed:', error);
+            process.exit(1);
+        }
     }
     /**
      * Check compatibility for a framework and packages
@@ -68,7 +154,7 @@ export class CLI {
         if (failed.length > 0) {
             console.log(`\n❌ ${failed.length} Failed combinations:`);
             failed.slice(0, 5).forEach(issue => {
-                console.log(`   - ${issue.error}`);
+                console.log(`   - ${issue.error ?? 'Unknown error'}`);
                 if (issue.workaround) {
                     console.log(`     💡 ${issue.workaround}`);
                 }
@@ -77,7 +163,7 @@ export class CLI {
         if (warned.length > 0) {
             console.log(`\n⚠️  ${warned.length} Warning combinations:`);
             warned.slice(0, 3).forEach(issue => {
-                console.log(`   - ${issue.error}`);
+                console.log(`   - ${issue.error ?? 'Unknown warning'}`);
             });
         }
         if (passed.length > 0) {
@@ -89,7 +175,7 @@ export class CLI {
     /**
      * Search compatibility database
      */
-    async searchCompatibility(query, options) {
+    async searchCompatibility(_query, options) {
         const searchQuery = {
             limit: parseInt(options.limit || '10'),
         };
@@ -110,7 +196,7 @@ export class CLI {
                 issue.version,
                 issue.react || '-',
                 issue.status.toUpperCase(),
-                issue.error?.substring(0, 50) + (issue.error && issue.error.length > 50 ? '...' : '') || '-'
+                (issue.error?.substring(0, 50) ?? '-') + (issue.error && issue.error.length > 50 ? '...' : '')
             ])
         ];
         console.log(table(tableData));

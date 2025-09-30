@@ -1,0 +1,41 @@
+{
+  "meta": {
+    "schema": 2,
+    "name": "compat-incidence",
+    "version": "2025.09.30",
+    "source": "gh:org/compat-table",
+    "envKey": "node20-linux-x64-glibc-2.35"
+  },
+  "v": {
+    "packages": [
+      {"id": "pkg:next@15"},
+      {"id": "pkg:next-auth@5"},
+      {"id": "pkg:typescript@5.5.x"},
+      {"id": "pkg:react@18.2.0"},
+      {"id": "pkg:react@>=18.2 <19"},
+      {"id": "pkg:ts-node@<10.9.0"},
+      {"id": "pkg:ts-node@>=10.9.1"},
+      {"id": "pkg:eslint@^9"}
+    ],
+    "envs": [
+      {"id": "env:node20-linux-x64-glibc-2.35"}
+    ]
+  },
+  "e": [
+    {"id": "rule:r1", "prio": 95, "reason": "Next15+NA5+TS5.5 ⇒ React18", "expiresAt": "2026-03-01"},
+    {"id": "rule:r2", "prio": 80, "reason": "ESLint9+TS5.5 ⇒ deny ts-node<10.9.0"}
+  ],
+  "i": [
+    {"v": "pkg:next@15",              "e": "rule:r1", "role": "ifAll"},
+    {"v": "pkg:next-auth@5",          "e": "rule:r1", "role": "ifAll"},
+    {"v": "pkg:typescript@5.5.x",     "e": "rule:r1", "role": "ifAll"},
+    {"v": "pkg:react@>=18.2 <19",     "e": "rule:r1", "role": "then"},
+    {"v": "env:node20-linux-x64-glibc-2.35", "e": "rule:r1", "role": "scope"},
+
+    {"v": "pkg:eslint@^9",            "e": "rule:r2", "role": "ifAll"},
+    {"v": "pkg:typescript@5.5.x",     "e": "rule:r2", "role": "ifAll"},
+    {"v": "pkg:ts-node@<10.9.0",      "e": "rule:r2", "role": "thenNot"},
+    {"v": "pkg:ts-node@>=10.9.1",     "e": "rule:r2", "role": "suggest"},
+    {"v": "env:node20-linux-x64-glibc-2.35", "e": "rule:r2", "role": "scope"}
+  ]
+}

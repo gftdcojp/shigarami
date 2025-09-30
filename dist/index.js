@@ -7,10 +7,10 @@
  * Routes commands to appropriate handlers based on process network topology.
  */
 import { program } from 'commander';
+import { CLI } from './cli/index.js';
 import { CompatibilityDatabaseManager } from './data/database.js';
 import { DepCompatMCPServer } from './mcp/server.js';
 import { setupWebServer } from './web/server.js';
-import { CLI } from './cli/index.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
 async function main() {
@@ -47,8 +47,7 @@ async function main() {
     program
         .command('check <framework> [packages...]')
         .description('Check compatibility for a framework and packages')
-        .option('-n, --node <version>', 'Node.js version')
-        .option('-p, --package-manager <manager>', 'Package manager (npm/yarn/pnpm)')
+        .option('-n, --node <version>', 'Node.js version to check')
         .action(async (framework, packages, options) => {
         const cli = new CLI(db);
         await cli.checkCompatibility(framework, packages, options);
@@ -57,29 +56,44 @@ async function main() {
     program
         .command('search [query]')
         .description('Search compatibility database')
-        .option('-f, --framework <framework>', 'Filter by framework')
-        .option('-s, --status <status>', 'Filter by status (pass/fail/warn)')
-        .option('-l, --limit <number>', 'Limit results', '10')
+        .option('-f, --framework <name>', 'Filter by framework')
+        .option('-s, --status <status>', 'Filter by status (pass, fail, warn)')
+        .option('-l, --limit <number>', 'Limit number of results')
         .action(async (query, options) => {
         const cli = new CLI(db);
         await cli.searchCompatibility(query, options);
     });
-    // Report new issue command
+    // Report command
     program
         .command('report')
         .description('Report a new compatibility issue')
-        .option('-f, --framework <framework>', 'Framework name and version (e.g., next@15.0.0)')
+        .option('-f, --framework <name>', 'Framework and version (e.g., next@15.0.0)')
+        .option('-s, --status <status>', 'Status (pass, fail, warn)')
         .option('-r, --react <version>', 'React version')
-        .option('-n, --node <version>', 'Node.js version')
-        .option('-p, --package-manager <manager>', 'Package manager')
-        .option('-l, --libs <libs>', 'Additional libraries (JSON string)')
-        .option('-s, --status <status>', 'Compatibility status (pass/fail/warn)')
-        .option('-e, --error <error>', 'Error description')
-        .option('-w, --workaround <workaround>', 'Workaround description')
-        .option('-v, --verified', 'Mark as verified')
+        .option('--libs <json>', 'Additional libraries as JSON string (e.g., \'{"lib-a":"1.0.0"}\')')
+        .option('-e, --error <message>', 'Error message')
+        .option('-w, --workaround <message>', 'Workaround message')
         .action(async (options) => {
         const cli = new CLI(db);
         await cli.reportIssue(options);
+    });
+    program
+        .command('resolve')
+        .description('Resolve project dependencies using the shigrami resolver')
+        .option('-p, --project-root <path>', 'Path to the project root directory')
+        .action(async (options) => {
+        const cli = new CLI(db);
+        await cli.resolveDependencies(options);
+    });
+    // New command for incidence graph checking
+    program
+        .command('check-graph')
+        .description('Check project compatibility using an incidence graph rules file')
+        .option('-p, --project-root <path>', 'Path to the project root directory')
+        .option('--rules-file <path>', 'Path to the compatibility rules JSON file')
+        .action(async (options) => {
+        const cli = new CLI(db);
+        await cli.checkIncidenceGraph(options);
     });
     // Stats command
     program
@@ -91,12 +105,11 @@ async function main() {
     });
     // Export command
     program
-        .command('export')
-        .description('Export compatibility database')
-        .option('-o, --output <file>', 'Output file', 'compatibility-db.json')
-        .action(async (options) => {
+        .command('export <outputFile>')
+        .description('Export compatibility database to a file')
+        .action(async (outputFile) => {
         const cli = new CLI(db);
-        await cli.exportDatabase(options.output);
+        await cli.exportDatabase(outputFile);
     });
     // Store commands
     program
@@ -226,7 +239,19 @@ async function main() {
             return;
         }
     }
-    await program.parseAsync();
+    try {
+        await program.parseAsync(process.argv);
+    }
+    catch (error) {
+        // This is a general catch-all. Specific errors are handled in CLI methods.
+        if (error instanceof Error) {
+            console.error('An unexpected error occurred:', error.message);
+        }
+        else {
+            console.error('An unexpected error occurred:', error);
+        }
+        process.exit(1);
+    }
 }
 // Handle process termination gracefully
 process.on('SIGINT', () => {
@@ -238,7 +263,12 @@ process.on('SIGTERM', () => {
     process.exit(0);
 });
 // Run main function
-main().catch((error) => {
-    console.error('Fatal error:', error);
+main().catch(error => {
+    if (error instanceof Error) {
+        console.error('Failed to start CLI:', error.message);
+    }
+    else {
+        console.error('Failed to start CLI:', error);
+    }
     process.exit(1);
 });

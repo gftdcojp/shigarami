@@ -40,7 +40,7 @@ export class CompatibilityDatabaseManager {
   private async loadAllIssues(): Promise<void> {
     try {
       const files = await fs.readdir(this.dataDir);
-      const issueFiles = files.filter(f => f.endsWith('.json') && f !== 'database.json');
+      const issueFiles = files.filter(f => f.endsWith('.json') && f !== 'database.json' && f !== 'compat-incidence-graph.json');
 
       const loadPromises = issueFiles.map(async (file) => {
         try {
