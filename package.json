@@ -55,6 +55,7 @@
   "dependencies": {
     "@effect/platform": "^0.92.0",
     "@effect/platform-node": "^0.98.0",
+    "@effect/schema": "^0.75.5",
     "@modelcontextprotocol/sdk": "^0.4.0",
     "@types/semver": "^7.7.1",
     "commander": "^14.0.1",

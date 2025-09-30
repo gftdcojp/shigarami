@@ -14,7 +14,7 @@ import { NodeRuntime } from '@effect/platform-node';
 import { CLI } from './cli/index.js';
 import type { CLIOptions } from './cli/index.js';
 import { CompatibilityDatabaseManager } from './data/database.js';
-import { DepCompatMCPServer } from './mcp/server.js';
+import { DepCompatMCPServer, startMCPServer } from './mcp/server.js';
 import { setupWebServer } from './web/server.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
@@ -30,6 +30,7 @@ import {
   storeStatsCommand,
   reportIssueCommand,
   resolveDependenciesCommand,
+  derivationHashCommand,
   ShigaramiCliLive
 } from './cli/commands.js';
 
@@ -46,26 +47,27 @@ async function main() {
     .description('Dependency Compatibility Database - Context7-like system for tracking package conflicts')
     .version('0.1.0');
 
-  // MCP server command
+  // MCP server command (Effect-TS version)
   program
     .command('mcp')
-    .description('Start MCP server for AI assistant integration')
+    .description('Start MCP server for AI assistant integration (Effect-TS version)')
     .option('--api-key <key>', 'API key for authentication (if required)')
     .action(async (options: any) => {
-      const server = new DepCompatMCPServer(db);
-      await server.start();
+      const effect = startMCPServer(db);
+      await Effect.runPromise(effect);
     });
 
-  // Web dashboard command
+  // Web dashboard command (Effect-TS version)
   program
     .command('dashboard')
-    .description('Start web dashboard server')
+    .description('Start web dashboard server (Effect-TS version)')
     .option('-p, --port <port>', 'Port to run the server on', '3000')
     .option('--host <host>', 'Host to bind to', 'localhost')
     .action(async (options: any) => {
       const port = parseInt(options.port);
       const host = options.host;
-      await setupWebServer(db, { port, host });
+      const effect = setupWebServer(db, { port, host });
+      await Effect.runPromise(effect);
     });
 
   // CLI commands for compatibility checking
@@ -203,6 +205,22 @@ async function main() {
     .option('-p, --project-root <path>', 'Path to the project root directory')
     .action((options: CLIOptions) => {
       const command = resolveDependenciesCommand(options);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  // Compute derivation hash (Effect-TS version)
+  program
+    .command('derivation-hash-effect')
+    .description('Compute derivation hash for given parameters (Effect-TS version)')
+    .option('-f, --framework <name>', 'Framework name')
+    .option('-V, --framework-version <version>', 'Framework version')
+    .option('-r, --react <version>', 'React version')
+    .option('-n, --node <version>', 'Node.js version')
+    .option('-p, --package-manager <manager>', 'Package manager')
+    .option('-l, --libs <libs>', 'Libraries as JSON string')
+    .action((options: any) => {
+      const command = derivationHashCommand(options);
       const runnable = Effect.provide(command, ShigaramiCliLive);
       NodeRuntime.runMain(runnable);
     });

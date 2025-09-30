@@ -12,7 +12,7 @@ import type { CompatibilityQuery } from '../types/compatibility.js';
 import { CompatibilityDatabaseManager as DBManager } from '../data/database.js';
 import type { NixStoreManager } from '../store/derivation.js';
 import type { CompatibilityIssue } from '../types/compatibility.js';
-import { NixStoreManager as NixManager } from '../store/derivation.js';
+import { NixStoreManager as NixManager, DerivationBuilder } from '../store/derivation.js';
 import { ResolverService } from '../services/resolver.js';
 import { GitHubStoreClient } from '../store/github-store.js';
 
@@ -672,6 +672,46 @@ export const resolveDependenciesCommand = (
     yield* _(Console.log('✅ Resolution successful!'));
     yield* _(Console.log(`   - Resolved ${Object.keys(lockFile.dependencies).length} dependencies.`));
     // Further steps would involve fetching and linking packages.
+  });
+
+/**
+ * Creates an Effect program for the 'derivation-hash-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Parse command line options to build a derivation
+ * 2. Compute the derivation hash
+ * 3. Display the hash and derivation details
+ *
+ * @param options - CLI options for derivation parameters
+ * @returns An Effect program that computes and displays derivation hash
+ */
+export const derivationHashCommand = (options: any): Effect.Effect<void, Error, never> =>
+  Effect.gen(function* (_) {
+    const builder = new DerivationBuilder();
+
+    // Build derivation from options
+    if (options.framework && options.frameworkVersion) {
+      builder.framework(options.framework, options.frameworkVersion);
+    }
+    if (options.react) builder.react(options.react);
+    if (options.node) builder.node(options.node);
+    if (options.packageManager) builder.packageManager(options.packageManager);
+    if (options.libs) {
+      const libs = yield* _(
+        Effect.try({
+          try: () => JSON.parse(options.libs),
+          catch: (e) => new Error(`Invalid libs JSON: ${e}`),
+        }),
+      );
+      builder.libraries(libs);
+    }
+
+    // Compute hash and build derivation
+    const hash = builder.getHash();
+    const derivation = builder.build();
+
+    yield* _(Console.log(`🔢 Derivation Hash: ${hash}`));
+    yield* _(Console.log(`📋 Derivation: ${JSON.stringify(derivation, null, 2)}`));
   });
 
 export const ShigaramiCliLive = IncidenceGraphCheckerLive.pipe(
