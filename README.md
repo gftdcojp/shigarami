@@ -92,6 +92,18 @@ depcompat/
 
 Browse the compatibility database at: **[https://junkawasaki.github.io/shigrami/](https://junkawasaki.github.io/shigrami/)**
 
+Access raw data via derivation hashes:
+```bash
+# List all stored derivation hashes
+npm run store:list
+
+# Get data by derivation hash
+npm run store:get <hash>
+
+# Export stored graph
+npm run store:export <hash> --format json
+```
+
 The web interface provides:
 - 🔍 Real-time search and filtering
 - 📊 Interactive compatibility matrix

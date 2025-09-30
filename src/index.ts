@@ -13,12 +13,16 @@ import { CompatibilityDatabaseManager } from './data/database.js';
 import { DepCompatMCPServer } from './mcp/server.js';
 import { setupWebServer } from './web/server.js';
 import { CLI } from './cli/index.js';
+import { PropertyGraphStore } from './store/property-graph-store.js';
+import { DerivationBuilder } from './store/derivation.js';
 
 async function main() {
   const db = new CompatibilityDatabaseManager();
+  const store = new PropertyGraphStore('@store');
 
-  // Initialize database
+  // Initialize database and store
   await db.initialize();
+  await store.initialize();
 
   program
     .name('depcompat')
@@ -105,6 +109,126 @@ async function main() {
     .action(async (options) => {
       const cli = new CLI(db);
       await cli.exportDatabase(options.output);
+    });
+
+  // Store commands
+  program
+    .command('store')
+    .description('Nix Store-like derivation hash based storage commands');
+
+  program
+    .command('store:put')
+    .description('Store compatibility data in derivation-based store')
+    .action(async () => {
+      console.log('📦 Storing compatibility data...');
+      const issues = await db.queryIssues({ limit: 1000 }); // Get all issues
+      const hash = await store.storeCompatibilityData(issues);
+      console.log(`✅ Stored with derivation hash: ${hash}`);
+    });
+
+  program
+    .command('store:get <hash>')
+    .description('Retrieve compatibility data from store by derivation hash')
+    .action(async (hash) => {
+      console.log(`🔍 Retrieving data for hash: ${hash}`);
+      const data = await store.getCompatibilityData(hash);
+      if (data) {
+        console.log(`✅ Found ${data.length} compatibility issues`);
+        console.log(`📊 Status breakdown:`);
+        const stats = data.reduce((acc, issue) => {
+          acc[issue.status] = (acc[issue.status] || 0) + 1;
+          return acc;
+        }, {});
+        Object.entries(stats).forEach(([status, count]) => {
+          console.log(`   ${status.toUpperCase()}: ${count}`);
+        });
+      } else {
+        console.log('❌ No data found for this hash');
+      }
+    });
+
+  program
+    .command('store:list')
+    .description('List all derivation hashes in store')
+    .action(async () => {
+      const hashes = await store['manager']['storeManager'].listDerivations();
+      console.log(`📋 Stored derivations: ${hashes.length}`);
+      hashes.slice(0, 10).forEach(hash => {
+        console.log(`   ${hash}`);
+      });
+      if (hashes.length > 10) {
+        console.log(`   ... and ${hashes.length - 10} more`);
+      }
+    });
+
+  program
+    .command('store:stats')
+    .description('Show store statistics')
+    .action(async () => {
+      const stats = await store.getStoreStats();
+      console.log('📊 Store Statistics:');
+      console.log(`   Total entries: ${stats.totalEntries}`);
+      console.log(`   Total size: ${(stats.totalSize / 1024).toFixed(2)} KB`);
+      console.log(`   Cache hits: ${stats.cacheHits}`);
+      console.log(`   Average entry size: ${(stats.averageEntrySize / 1024).toFixed(2)} KB`);
+      if (stats.oldestEntry) {
+        console.log(`   Oldest entry: ${new Date(stats.oldestEntry).toLocaleDateString()}`);
+        console.log(`   Newest entry: ${new Date(stats.newestEntry).toLocaleDateString()}`);
+      }
+    });
+
+  program
+    .command('store:export <hash>')
+    .description('Export stored graph to file')
+    .option('-f, --format <format>', 'Export format (json/jsonl/csv)', 'json')
+    .option('-o, --output <file>', 'Output file')
+    .action(async (hash, options) => {
+      const format = options.format;
+      const data = await store.exportGraph(hash, format);
+      const outputFile = options.output || `export_${hash}.${format}`;
+
+      const fs = await import('fs/promises');
+      await fs.writeFile(outputFile, data);
+      console.log(`✅ Exported to ${outputFile} (${data.length} bytes)`);
+    });
+
+  program
+    .command('derivation:hash')
+    .description('Compute derivation hash for given parameters')
+    .option('-f, --framework <name>', 'Framework name')
+    .option('-v, --version <version>', 'Framework version')
+    .option('-r, --react <version>', 'React version')
+    .option('-n, --node <version>', 'Node.js version')
+    .option('-p, --package-manager <manager>', 'Package manager')
+    .option('-l, --libs <libs>', 'Libraries as JSON string')
+    .action(async (options) => {
+      const builder = new DerivationBuilder();
+
+      if (options.framework && options.version) {
+        builder.framework(options.framework, options.version);
+      }
+      if (options.react) builder.react(options.react);
+      if (options.node) builder.node(options.node);
+      if (options.packageManager) builder.packageManager(options.packageManager);
+      if (options.libs) {
+        try {
+          const libs = JSON.parse(options.libs);
+          builder.libraries(libs);
+        } catch (error) {
+          console.error('❌ Invalid libs JSON');
+          process.exit(1);
+        }
+      }
+
+      try {
+        const derivation = builder.build();
+        const hash = builder.getHash();
+        console.log(`🔢 Derivation Hash: ${hash}`);
+        console.log(`📋 Derivation: ${JSON.stringify(derivation, null, 2)}`);
+      } catch (error) {
+        console.error('❌ Failed to create derivation:', error.message);
+        process.exit(1);
+      }
     });
 
   // If no command is provided and we're being called as an MCP server

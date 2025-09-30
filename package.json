@@ -12,11 +12,16 @@
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",
     "ci:test": "npm run build && npm run test",
-    "export": "node dist/index.js export"
+    "export": "node dist/index.js export",
+    "store:put": "node dist/index.js store:put",
+    "store:get": "node dist/index.js store:get",
+    "store:list": "node dist/index.js store:list",
+    "store:stats": "node dist/index.js store:stats",
+    "store:export": "node dist/index.js store:export"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/junkawasaki/depcompat.git"
+    "url": "https://github.com/junkawasaki/shigrami.git"
   },
   "keywords": [
     "dependencies",
