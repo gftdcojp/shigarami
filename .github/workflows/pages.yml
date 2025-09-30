@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Shigrami to GitHub Pages
 
 on:
   push:

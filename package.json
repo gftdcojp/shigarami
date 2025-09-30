@@ -1,5 +1,5 @@
 {
-  "name": "depcompat",
+  "name": "shigrami",
   "version": "0.1.0",
   "description": "Dependency Compatibility Database - Context7-like system for tracking package compatibility issues",
   "main": "dist/index.js",

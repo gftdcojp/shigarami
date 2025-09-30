@@ -40,8 +40,8 @@ If you have verified compatibility information:
 
 ```bash
 # Clone the repository
-git clone https://github.com/junkawasaki/depcompat.git
-cd depcompat
+git clone https://github.com/junkawasaki/shigrami.git
+cd shigrami
 
 # Install dependencies
 npm install

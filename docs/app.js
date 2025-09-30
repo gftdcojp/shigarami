@@ -1,6 +1,6 @@
-// DepCompat - GitHub Pages JavaScript Application
+// Shigrami - GitHub Pages JavaScript Application
 
-class DepCompatApp {
+class ShigramiApp {
     constructor() {
         this.allIssues = [];
         this.filteredIssues = [];
@@ -403,5 +403,5 @@ class DepCompatApp {
 
 // Initialize the application when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new DepCompatApp();
+    new ShigramiApp();
 });

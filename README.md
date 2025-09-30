@@ -1,10 +1,10 @@
-# DepCompat - Dependency Compatibility Database
+# Shigrami - Dependency Compatibility Database
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue)](https://www.typescriptlang.org/)
 
-DepCompat is a Context7-inspired system for tracking and preventing dependency compatibility issues in JavaScript/TypeScript projects. Like Context7 provides library documentation, DepCompat provides compatibility data to prevent "dependency hell" before it happens.
+Shigrami is a Context7-inspired system for tracking and preventing dependency compatibility issues in JavaScript/TypeScript projects. Like Context7 provides library documentation, Shigrami provides compatibility data to prevent "dependency hell" before it happens.
 
 ## 🚀 Features
 
@@ -90,7 +90,7 @@ depcompat/
 
 ## 🌐 Live Demo
 
-Browse the compatibility database at: **[https://junkawasaki.github.io/depcompat/](https://junkawasaki.github.io/depcompat/)**
+Browse the compatibility database at: **[https://junkawasaki.github.io/shigrami/](https://junkawasaki.github.io/shigrami/)**
 
 The web interface provides:
 - 🔍 Real-time search and filtering
@@ -107,8 +107,8 @@ Use our [GitHub Issue template](.github/ISSUE_TEMPLATE/compatibility-issue.md) t
 ### Development Setup
 
 ```bash
-git clone https://github.com/junkawasaki/depcompat.git
-cd depcompat
+git clone https://github.com/junkawasaki/shigrami.git
+cd shigrami
 npm install
 npm run dev
 ```

@@ -19,12 +19,12 @@
 
 // Core project metadata - Merkle root for the entire project
 local project = {
-  name: 'depcompat',
+  name: 'shigrami',
   version: '0.1.0',
   description: 'Dependency Compatibility Database - Context7-like system',
   license: 'Apache-2.0',
   author: 'Jun Kawasaki',
-  repository: 'https://github.com/junkawasaki/depcompat',
+  repository: 'https://github.com/junkawasaki/shigrami',
   keywords: [
     'dependencies',
     'compatibility',
