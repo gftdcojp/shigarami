@@ -15,7 +15,7 @@ import { DepCompatMCPServer } from './mcp/server.js';
 import { setupWebServer } from './web/server.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
-import { checkGraphCommand, ShigaramiCliLive } from './cli/commands.js';
+import { checkGraphCommand, statsCommand, searchCommand, exportCommand, fetchCompatCommand, ShigaramiCliLive } from './cli/commands.js';
 async function main() {
     const db = new CompatibilityDatabaseManager();
     const store = new PropertyGraphStore('@store');
@@ -108,6 +108,45 @@ async function main() {
         .action(async (options) => {
         const cli = new CLI(db);
         await cli.checkIncidenceGraph(options);
+    });
+    // Search command (Effect-TS version)
+    program
+        .command('search-effect [query]')
+        .description('Search compatibility database (Effect-TS version)')
+        .option('-f, --framework <name>', 'Filter by framework')
+        .option('-s, --status <status>', 'Filter by status (pass, fail, warn)')
+        .option('-l, --limit <number>', 'Limit number of results')
+        .action((query, options) => {
+        const command = searchCommand(query, options);
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+    });
+    // Stats command (Effect-TS version)
+    program
+        .command('stats-effect')
+        .description('Show database statistics (Effect-TS version)')
+        .action(() => {
+        const command = statsCommand();
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+    });
+    // Export command (Effect-TS version)
+    program
+        .command('export-effect <outputFile>')
+        .description('Export compatibility database to a file (Effect-TS version)')
+        .action((outputFile) => {
+        const command = exportCommand(outputFile);
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+    });
+    // Fetch compatibility data (Effect-TS version)
+    program
+        .command('fetch-compat <url>')
+        .description('Fetch compatibility data from a remote source (Effect-TS version)')
+        .action((url) => {
+        const command = fetchCompatCommand(url);
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
     });
     // Stats command
     program
