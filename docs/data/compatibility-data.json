@@ -1,0 +1,110 @@
+{
+  "issues": [
+    {
+      "id": "next15-react19-peer-deps-001",
+      "framework": "next",
+      "version": "15.0.0",
+      "react": "19.0.0",
+      "node": "20.11.0",
+      "packageManager": "npm",
+      "libs": {
+        "next-auth": "5.0.0-beta.3"
+      },
+      "status": "fail",
+      "error": "ERESOLVE could not resolve peer dependencies",
+      "workaround": "Use --legacy-peer-deps flag or downgrade React to 18.2.0",
+      "reportedAt": "2024-01-15T10:00:00Z",
+      "verified": true,
+      "source": "github-issue",
+      "issueUrl": "https://github.com/next-auth/next-auth/issues/1234"
+    },
+    {
+      "id": "next14-react18-recoil-001",
+      "framework": "next",
+      "version": "14.2.5",
+      "react": "18.2.0",
+      "node": "18.17.0",
+      "packageManager": "npm",
+      "libs": {
+        "recoil": "0.7.7"
+      },
+      "status": "pass",
+      "error": null,
+      "workaround": null,
+      "reportedAt": "2024-01-10T08:30:00Z",
+      "verified": true,
+      "source": "ci-test"
+    },
+    {
+      "id": "astro4-react18-query-001",
+      "framework": "astro",
+      "version": "4.0.0",
+      "react": "18.2.0",
+      "node": "20.11.0",
+      "packageManager": "pnpm",
+      "libs": {
+        "react-query": "5.0.0"
+      },
+      "status": "warn",
+      "error": "Hydration warning in development mode",
+      "workaround": "Warning is harmless and doesn't affect production builds",
+      "reportedAt": "2024-01-12T14:20:00Z",
+      "verified": false,
+      "source": "manual"
+    },
+    {
+      "id": "next15-react19-swr-001",
+      "framework": "next",
+      "version": "15.0.0",
+      "react": "19.0.0",
+      "node": "20.11.0",
+      "packageManager": "yarn",
+      "libs": {
+        "swr": "2.2.0"
+      },
+      "status": "warn",
+      "error": "Potential hydration mismatch warnings",
+      "workaround": "Ensure proper data fetching patterns or use SWR's hydration features",
+      "reportedAt": "2024-01-18T16:45:00Z",
+      "verified": true,
+      "source": "ci-test"
+    },
+    {
+      "id": "remix2-react18-framer-motion-001",
+      "framework": "remix",
+      "version": "2.8.0",
+      "react": "18.2.0",
+      "node": "18.17.0",
+      "packageManager": "npm",
+      "libs": {
+        "framer-motion": "11.0.0"
+      },
+      "status": "pass",
+      "error": null,
+      "workaround": null,
+      "reportedAt": "2024-01-08T12:15:00Z",
+      "verified": true,
+      "source": "manual"
+    },
+    {
+      "id": "next15-react19-zustand-001",
+      "framework": "next",
+      "version": "15.0.0",
+      "react": "19.0.0",
+      "node": "20.11.0",
+      "packageManager": "pnpm",
+      "libs": {
+        "zustand": "4.5.0"
+      },
+      "status": "pass",
+      "error": null,
+      "workaround": null,
+      "reportedAt": "2024-01-20T09:30:00Z",
+      "verified": false,
+      "source": "manual"
+    }
+  ],
+  "schemaVersion": "1.0.0",
+  "lastUpdated": "2024-01-20T12:00:00Z",
+  "merkleRoot": "sample-data-hash"
+}
