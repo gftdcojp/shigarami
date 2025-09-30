@@ -2,6 +2,7 @@ import { Effect, Layer, Console, Context } from 'effect';
 import { NodeContext } from '@effect/platform-node';
 import path from 'path';
 import fs from 'fs/promises';
+import crypto from 'crypto';
 
 import { IncidenceGraphCheckerService } from '../services/incidence-graph-checker.js';
 import type { IncidenceGraph } from '../types/incidence-graph.js';
@@ -9,6 +10,11 @@ import type { CLIOptions } from './index.js';
 import type { CompatibilityDatabaseManager } from '../data/database.js';
 import type { CompatibilityQuery } from '../types/compatibility.js';
 import { CompatibilityDatabaseManager as DBManager } from '../data/database.js';
+import type { NixStoreManager } from '../store/derivation.js';
+import type { CompatibilityIssue } from '../types/compatibility.js';
+import { NixStoreManager as NixManager } from '../store/derivation.js';
+import { ResolverService } from '../services/resolver.js';
+import { GitHubStoreClient } from '../store/github-store.js';
 
 /**
  * Merkle DAG Edge: effect_cli -> incidence_graph_checker_service
@@ -30,6 +36,16 @@ export class IncidenceGraphChecker extends Context.Tag("IncidenceGraphCheckerSer
 export class CompatibilityDatabase extends Context.Tag("CompatibilityDatabaseManager")<
   CompatibilityDatabase,
   CompatibilityDatabaseManager
+>() {}
+
+export class NixStore extends Context.Tag("NixStoreManager")<
+  NixStore,
+  NixStoreManager
+>() {}
+
+export class DependencyResolver extends Context.Tag("ResolverService")<
+  DependencyResolver,
+  ResolverService
 >() {}
 
 /**
@@ -319,6 +335,177 @@ export const fetchCompatCommand = (
   });
 
 /**
+ * Creates an Effect program for the 'store-put-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Retrieves compatibility issues from the database.
+ * 2. Stores them in Nix Store-like fashion based on derivation hash.
+ * 3. Returns the derivation hash.
+ *
+ * @returns An Effect program that stores compatibility data in Nix Store.
+ */
+export const storePutCommand = (): Effect.Effect<void, Error, CompatibilityDatabase | NixStore> =>
+  Effect.gen(function* (_) {
+    const db = yield* _(CompatibilityDatabase);
+    const store = yield* _(NixStore);
+
+    yield* _(Console.log('📦 Storing compatibility data...'));
+
+    const issues = yield* _(
+      Effect.tryPromise({
+        try: () => db.queryIssues({ limit: 1000 }),
+        catch: (e) => new Error(`Failed to query issues: ${e}`),
+      }),
+    );
+
+    // Create a derivation for the compatibility data
+    const derivation = {
+      framework: { name: 'shigrami', version: '1.0.0' },
+      libraries: {},
+      testScript: 'compatibility-data-collection',
+      environment: { os: 'any', timeout: 0 },
+    };
+
+    // Create a derivation result containing the compatibility issues
+    const result = {
+      status: 'pass' as const,
+      duration: 0,
+      environment: {
+        nodeVersion: process.version,
+        os: process.platform,
+        arch: process.arch,
+        timestamp: new Date().toISOString(),
+      },
+      verified: true,
+      compatibilityData: issues,
+    };
+
+    const hash = yield* _(
+      Effect.tryPromise({
+        try: () => store.storeResult(derivation, result),
+        catch: (e) => new Error(`Failed to store data: ${e}`),
+      }),
+    );
+
+    yield* _(Console.log(`✅ Stored with derivation hash: ${hash}`));
+  });
+
+/**
+ * Creates an Effect program for the 'store-get-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Retrieves compatibility data from Nix Store by hash.
+ * 2. Displays statistics about the retrieved data.
+ *
+ * @param hash - The derivation hash to retrieve.
+ * @returns An Effect program that retrieves and displays stored data.
+ */
+export const storeGetCommand = (
+  hash: string,
+): Effect.Effect<void, Error, NixStore> =>
+  Effect.gen(function* (_) {
+    const store = yield* _(NixStore);
+
+    yield* _(Console.log(`🔍 Retrieving data for hash: ${hash}`));
+
+    const entry = yield* _(
+      Effect.tryPromise({
+        try: () => store.getResult(hash),
+        catch: (e) => new Error(`Failed to retrieve data: ${e}`),
+      }),
+    );
+
+    if (!entry) {
+      yield* _(Console.log('❌ No data found for this hash'));
+      return;
+    }
+
+    const data = (entry.result as any).compatibilityData as CompatibilityIssue[];
+    if (!data || !Array.isArray(data)) {
+      yield* _(Console.log('❌ Invalid data format'));
+      return;
+    }
+
+    yield* _(Console.log(`✅ Found ${data.length} compatibility issues`));
+    yield* _(Console.log(`📊 Status breakdown:`));
+
+    const stats = data.reduce((acc, issue) => {
+      acc[issue.status] = (acc[issue.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    yield* _(Effect.forEach(
+      Object.entries(stats),
+      ([status, count]) => Console.log(`   ${status.toUpperCase()}: ${count}`),
+      { concurrency: 1 }
+    ));
+  });
+
+/**
+ * Creates an Effect program for the 'store-list-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Lists all derivation hashes in the Nix Store.
+ * 2. Displays the total count and first few hashes.
+ *
+ * @returns An Effect program that lists stored derivations.
+ */
+export const storeListCommand = (): Effect.Effect<void, Error, NixStore> =>
+  Effect.gen(function* (_) {
+    const store = yield* _(NixStore);
+
+    const hashes = yield* _(
+      Effect.tryPromise({
+        try: () => store.listDerivations(),
+        catch: (e) => new Error(`Failed to list derivations: ${e}`),
+      }),
+    );
+
+    yield* _(Console.log(`📋 Stored derivations: ${hashes.length}`));
+    yield* _(Effect.forEach(
+      hashes.slice(0, 10),
+      (hash) => Console.log(`   ${hash}`),
+      { concurrency: 1 }
+    ));
+
+    if (hashes.length > 10) {
+      yield* _(Console.log(`   ... and ${hashes.length - 10} more`));
+    }
+  });
+
+/**
+ * Creates an Effect program for the 'store-stats-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Retrieves Nix Store statistics.
+ * 2. Displays detailed statistics about the store.
+ *
+ * @returns An Effect program that displays store statistics.
+ */
+export const storeStatsCommand = (): Effect.Effect<void, Error, NixStore> =>
+  Effect.gen(function* (_) {
+    const store = yield* _(NixStore);
+
+    const stats = yield* _(
+      Effect.tryPromise({
+        try: () => store.getStatistics(),
+        catch: (e) => new Error(`Failed to get store stats: ${e}`),
+      }),
+    );
+
+    yield* _(Console.log('📊 Nix Store Statistics:'));
+    yield* _(Console.log(`   Total entries: ${stats.totalEntries}`));
+    yield* _(Console.log(`   Total size: ${(stats.totalSize / 1024).toFixed(2)} KB`));
+    yield* _(Console.log(`   Cache hits: ${stats.cacheHits}`));
+    yield* _(Console.log(`   Average entry size: ${(stats.averageEntrySize / 1024).toFixed(2)} KB`));
+
+    if (stats.oldestEntry) {
+      yield* _(Console.log(`   Oldest entry: ${new Date(stats.oldestEntry).toLocaleDateString()}`));
+      yield* _(Console.log(`   Newest entry: ${new Date(stats.newestEntry).toLocaleDateString()}`));
+    }
+  });
+
+/**
  * A ready-to-run layer that provides all the necessary services for the commands in this file.
  * This wires up the live implementations for the services.
  */
@@ -334,7 +521,161 @@ const CompatibilityDatabaseLive = Layer.effect(
   }),
 );
 
+const NixStoreLive = Layer.effect(
+  NixStore,
+  Effect.gen(function* (_) {
+    const store = new NixManager('@store');
+    yield* _(Effect.tryPromise({
+      try: () => store.initialize(),
+      catch: (e) => new Error(`Nix Store initialization failed: ${e}`),
+    }));
+    return store;
+  }),
+);
+
+/**
+ * Creates an Effect program for the 'report-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Validate required options (framework, status)
+ * 2. Parse framework and version
+ * 3. Parse additional libraries JSON
+ * 4. Create CompatibilityIssue object
+ * 5. Save to database
+ *
+ * @param options - CLI options for the report
+ * @returns An Effect program that reports a compatibility issue
+ */
+export const reportIssueCommand = (
+  options: CLIOptions,
+): Effect.Effect<void, Error, CompatibilityDatabase> =>
+  Effect.gen(function* (_) {
+    // Validate required options
+    if (!options.framework) {
+      yield* _(Effect.fail(new Error('Framework is required (use -f or --framework)')));
+    }
+
+    if (!options.status) {
+      yield* _(Effect.fail(new Error('Status is required (use -s or --status)')));
+    }
+
+    // Parse framework and version
+    const [framework, version] = options.framework!.includes('@')
+      ? options.framework!.split('@', 2)
+      : [options.framework!, undefined];
+
+    if (!version) {
+      yield* _(Effect.fail(new Error('Framework version must be specified (e.g., next@15.0.0)')));
+    }
+
+    // Parse additional libraries
+    let libs: Record<string, string> = {};
+    if (options.libs) {
+      libs = yield* _(
+        Effect.try({
+          try: () => JSON.parse(options.libs!),
+          catch: (e) => new Error(`Invalid libs JSON format: ${e}`),
+        }),
+      );
+    }
+
+    const db = yield* _(CompatibilityDatabase);
+
+    // Generate ID beforehand (same logic as database manager)
+    const components = [
+      framework,
+      version!,
+      options.react,
+      options.node,
+      options.packageManager,
+    ].filter(Boolean);
+
+    if (Object.keys(libs).length > 0) {
+      components.push(...Object.entries(libs).map(([k, v]) => `${k}@${v}`));
+    }
+
+    const hashInput = components.join('|');
+    const id = crypto.createHash('sha256').update(hashInput).digest('hex').substring(0, 16);
+
+    // Create issue object with generated ID
+    const issueData = {
+      id,
+      framework,
+      version: version!,
+      react: options.react,
+      node: options.node,
+      packageManager: options.packageManager,
+      libs: Object.keys(libs).length > 0 ? libs : undefined,
+      status: options.status!,
+      error: options.error,
+      workaround: options.workaround,
+      reportedAt: new Date().toISOString(),
+      verified: options.verified || false,
+      source: 'manual' as const,
+    };
+
+    // Save to database
+    yield* _(
+      Effect.tryPromise({
+        try: () => db.saveIssue(issueData),
+        catch: (e) => new Error(`Failed to save issue: ${e}`),
+      }),
+    );
+
+    yield* _(Console.log('✅ Compatibility issue reported successfully!'));
+    yield* _(Console.log(`   Issue ID: ${id}`));
+  });
+
+/**
+ * Creates an Effect program for the 'resolve-effect' command.
+ *
+ * The program performs the following steps:
+ * 1. Initialize GitHub store client
+ * 2. Create resolver service
+ * 3. Resolve project dependencies
+ * 4. Report results
+ *
+ * @param options - CLI options for the resolution
+ * @returns An Effect program that resolves project dependencies
+ */
+export const resolveDependenciesCommand = (
+  options: CLIOptions,
+): Effect.Effect<void, Error, never> =>
+  Effect.gen(function* (_) {
+    const projectRoot = options.projectRoot || process.cwd();
+    yield* _(Console.log(`🚀 Starting dependency resolution for project at: ${projectRoot}`));
+
+    // Initialize store client (placeholder configuration)
+    const storeClient = new GitHubStoreClient({
+      owner: 'junkawasaki', // Replace with the actual store owner
+      repo: 'dep-store',      // Replace with the actual store repo
+    });
+
+    yield* _(
+      Effect.tryPromise({
+        try: () => storeClient.initialize(),
+        catch: (e) => new Error(`Failed to initialize store client: ${e}`),
+      }),
+    );
+
+    // Create resolver service
+    const resolver = new ResolverService(storeClient);
+
+    // Resolve dependencies
+    const lockFile = yield* _(
+      Effect.tryPromise({
+        try: () => resolver.resolveProject(projectRoot),
+        catch: (e) => new Error(`Dependency resolution failed: ${e}`),
+      }),
+    );
+
+    yield* _(Console.log('✅ Resolution successful!'));
+    yield* _(Console.log(`   - Resolved ${Object.keys(lockFile.dependencies).length} dependencies.`));
+    // Further steps would involve fetching and linking packages.
+  });
+
 export const ShigaramiCliLive = IncidenceGraphCheckerLive.pipe(
   Layer.provideMerge(CompatibilityDatabaseLive),
+  Layer.provideMerge(NixStoreLive),
   Layer.provide(NodeContext.layer),
 );

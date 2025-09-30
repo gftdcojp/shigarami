@@ -1,0 +1,9 @@
+{
+  "resolver": "shigrami@0.1.0",
+  "environment": {
+    "node": "v22.19.0",
+    "os": "darwin",
+    "cpu": "arm64"
+  },
+  "dependencies": {}
+}

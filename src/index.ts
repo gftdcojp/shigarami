@@ -24,6 +24,12 @@ import {
   searchCommand,
   exportCommand,
   fetchCompatCommand,
+  storePutCommand,
+  storeGetCommand,
+  storeListCommand,
+  storeStatsCommand,
+  reportIssueCommand,
+  resolveDependenciesCommand,
   ShigaramiCliLive
 } from './cli/commands.js';
 
@@ -170,6 +176,70 @@ async function main() {
     .description('Fetch compatibility data from a remote source (Effect-TS version)')
     .action((url: string) => {
       const command = fetchCompatCommand(url);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  // Report compatibility issue (Effect-TS version)
+  program
+    .command('report-effect')
+    .description('Report a new compatibility issue (Effect-TS version)')
+    .option('-f, --framework <name>', 'Framework and version (e.g., next@15.0.0)')
+    .option('-s, --status <status>', 'Status (pass, fail, warn)')
+    .option('-r, --react <version>', 'React version')
+    .option('--libs <json>', 'Additional libraries as JSON string (e.g., \'{"lib-a":"1.0.0"}\')')
+    .option('-e, --error <message>', 'Error message')
+    .option('-w, --workaround <message>', 'Workaround message')
+    .action((options: CLIOptions) => {
+      const command = reportIssueCommand(options);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  // Resolve dependencies (Effect-TS version)
+  program
+    .command('resolve-effect')
+    .description('Resolve project dependencies using the shigrami resolver (Effect-TS version)')
+    .option('-p, --project-root <path>', 'Path to the project root directory')
+    .action((options: CLIOptions) => {
+      const command = resolveDependenciesCommand(options);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  // Nix Store operations (Effect-TS version)
+  program
+    .command('store-put-effect')
+    .description('Store compatibility data in derivation-based store (Effect-TS version)')
+    .action(() => {
+      const command = storePutCommand();
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  program
+    .command('store-get-effect <hash>')
+    .description('Retrieve compatibility data from store by derivation hash (Effect-TS version)')
+    .action((hash: string) => {
+      const command = storeGetCommand(hash);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  program
+    .command('store-list-effect')
+    .description('List all derivation hashes in store (Effect-TS version)')
+    .action(() => {
+      const command = storeListCommand();
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
+    });
+
+  program
+    .command('store-stats-effect')
+    .description('Show store statistics (Effect-TS version)')
+    .action(() => {
+      const command = storeStatsCommand();
       const runnable = Effect.provide(command, ShigaramiCliLive);
       NodeRuntime.runMain(runnable);
     });

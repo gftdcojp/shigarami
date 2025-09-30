@@ -1,0 +1,12 @@
+{
+  "id": "82cc7d3d559151f6",
+  "framework": "next",
+  "version": "15.0.0",
+  "status": "pass",
+  "error": "Test compatibility issue",
+  "workaround": "Use React 18",
+  "reportedAt": "2025-09-30T07:42:17.789Z",
+  "verified": false,
+  "source": "manual",
+  "merkleHash": "cfc53646bb3159bd53e42f88eb0354fd8bb2bb58542ce94168af95348b51bbf8"
+}
