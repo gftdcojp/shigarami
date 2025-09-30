@@ -16,7 +16,7 @@ import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
 import { checkGraphCommand, statsCommand, searchCommand, exportCommand, fetchCompatCommand, storePutCommand, storeGetCommand, storeListCommand, storeStatsCommand, reportIssueCommand, resolveDependenciesCommand, derivationHashCommand, analyzeCommand, // Add analyzeCommand
 ShigaramiCliLive } from './cli/commands.js';
-import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito-commands.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito.js';
 import { Command } from 'commander';
 async function main() {
     const db = new CompatibilityDatabaseManager();

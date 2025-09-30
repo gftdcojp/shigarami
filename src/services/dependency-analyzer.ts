@@ -34,12 +34,12 @@ export class DependencyAnalyzerService {
    * @param projectRoot - The root path of the project to analyze.
    * @returns An Effect that resolves to a list of package scores.
    */
-  public analyze(projectRoot: string): Effect.Effect<PackageScore[], Error> {
-    return Effect.gen(function* (_this) {
-      yield* _this(Console.log(`🔍 Analyzing dependencies for project at: ${projectRoot}`));
+  public analyze = (projectRoot: string): Effect.Effect<PackageScore[], Error> =>
+    Effect.gen(function* (_) {
+      yield* _(Console.log(`🔍 Analyzing dependencies for project at: ${projectRoot}`));
 
       // 1. Get dependency tree using `npm ls --json`
-      const depTree = yield* _this(Effect.tryPromise({
+      const depTree = yield* _(Effect.tryPromise({
         try: () => this.getDependencyTree(projectRoot),
         catch: (e) => new Error(`Failed to get dependency tree: ${e}`),
       }));
@@ -60,11 +60,11 @@ export class DependencyAnalyzerService {
       // 4. Sort by score
       scores.sort((a, b) => b.score - a.score);
 
-      yield* _this(Console.log(`✅ Analysis complete. Found ${scores.length} unique dependencies.`));
+      yield* _(Console.log(`✅ Analysis complete. Found ${scores.length} unique dependencies.`));
 
       return scores;
     }.bind(this));
-  }
+  
 
   /**
    * Generates a prioritized experiment plan based on package scores.
@@ -72,7 +72,7 @@ export class DependencyAnalyzerService {
    * @param projectPackageJson - The parsed package.json of the root project.
    * @returns An experiment plan with Tier 1, 2, and 3 experiments.
    */
-  public generatePlan(scores: PackageScore[], projectPackageJson: any): ExperimentPlan {
+  public generatePlan = (scores: PackageScore[], projectPackageJson: any): ExperimentPlan => {
     const tier1Packages = scores.slice(0, 5).map(s => s.name);
     const coreFramework = projectPackageJson.dependencies?.next ? 'next' : (projectPackageJson.dependencies?.react ? 'react' : undefined);
     const reactVersion = projectPackageJson.dependencies?.react;
@@ -103,7 +103,7 @@ export class DependencyAnalyzerService {
     return plan;
   }
 
-  private async getDependencyTree(cwd: string): Promise<NpmLsDependency> {
+  private getDependencyTree = async (cwd: string): Promise<NpmLsDependency> => {
     return new Promise((resolve, reject) => {
       child_process.exec('npm ls --json', { cwd, maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
         // npm ls returns a non-zero exit code if there are unmet peer dependencies,
@@ -130,7 +130,7 @@ export class DependencyAnalyzerService {
     });
   }
 
-  private traverseDeps(node: NpmLsDependency, visitor: (depName: string) => void) {
+  private traverseDeps = (node: NpmLsDependency, visitor: (depName: string) => void) => {
     if (!node.dependencies) return;
 
     for (const depName in node.dependencies) {

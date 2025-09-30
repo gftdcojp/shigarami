@@ -34,7 +34,7 @@ import {
   analyzeCommand, // Add analyzeCommand
   ShigaramiCliLive
 } from './cli/commands.js';
-import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito-commands.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito.js';
 import { Command } from 'commander';
 
 async function main() {
