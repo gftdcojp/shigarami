@@ -46,21 +46,20 @@ const IncidenceGraphCheckerLive = Layer.succeed(
  *
  * @param options - The CLI options provided to the command.
  * @returns An Effect program that, when executed, will perform the check.
- *          The Effect requires FileSystem and IncidenceGraphCheckerService dependencies.
  */
 export const checkGraphCommand = (
   options: CLIOptions,
-): Effect.Effect<void, Error, FileSystem | IncidenceGraphChecker> => {
-  const projectRoot = options.projectRoot || process.cwd();
-  const rulesFile =
-    options.rulesFile || path.join(projectRoot, 'compat-rules.json');
-
-  return Effect.gen(function* (_) {
-    const fs = yield* _(FileSystem);
-    const checker = yield* _(IncidenceGraphChecker);
+): Effect.Effect<void, Error, never> =>
+  Effect.gen(function* (_) {
+    const projectRoot = options.projectRoot || process.cwd();
+    const rulesFile =
+      options.rulesFile || path.join(projectRoot, 'compat-rules.json');
 
     yield* _(Console.log(`🔎 Running incidence graph check for project at: ${projectRoot}`));
     yield* _(Console.log(`   Using rules from: ${rulesFile}`));
+
+    const fs = yield* _(FileSystem);
+    const checker = yield* _(IncidenceGraphChecker);
 
     const rulesContent = yield* _(fs.readFileString(rulesFile));
     const graph: IncidenceGraph = JSON.parse(rulesContent);
@@ -97,7 +96,6 @@ export const checkGraphCommand = (
 
     yield* _(Console.log('\n✅ No compatibility violations found.'));
   });
-};
 
 /**
  * A ready-to-run layer that provides all the necessary services for the commands in this file.
