@@ -44,7 +44,7 @@ export interface CompatibilityIssue {
   verified: boolean;
 
   /** Source of the report (github-issue, ci-test, manual) */
-  source: 'github-issue' | 'ci-test' | 'manual' | 'community';
+  source: CompatibilityIssueSource;
 
   /** GitHub issue URL if applicable */
   issueUrl?: string;
@@ -55,6 +55,8 @@ export interface CompatibilityIssue {
   /** Merkle hash for this compatibility node */
   merkleHash?: string;
 }
+
+export type CompatibilityIssueSource = 'github-issue' | 'ci-test' | 'manual' | 'community';
 
 export interface CompatibilityQuery {
   /** Framework to filter by */

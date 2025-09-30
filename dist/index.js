@@ -6,7 +6,6 @@
  * Entry point for the DepCompat CLI and MCP server.
  * Routes commands to appropriate handlers based on process network topology.
  */
-import { program } from 'commander';
 import { Effect } from 'effect';
 import { NodeRuntime } from '@effect/platform-node';
 import { CLI } from './cli/index.js';
@@ -16,12 +15,16 @@ import { setupWebServer } from './web/server.js';
 import { PropertyGraphStore } from './store/property-graph-store.js';
 import { DerivationBuilder } from './store/derivation.js';
 import { checkGraphCommand, statsCommand, searchCommand, exportCommand, fetchCompatCommand, storePutCommand, storeGetCommand, storeListCommand, storeStatsCommand, reportIssueCommand, resolveDependenciesCommand, derivationHashCommand, ShigaramiCliLive } from './cli/commands.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand, KaitoLive } from './cli/kaito.js';
+import { Command } from 'commander';
+import { Layer } from 'effect';
 async function main() {
     const db = new CompatibilityDatabaseManager();
     const store = new PropertyGraphStore('@store');
     // Initialize database and store
     await db.initialize();
     await store.initialize();
+    const program = new Command();
     program
         .name('shigrami')
         .description('Dependency Compatibility Database - Context7-like system for tracking package conflicts')
@@ -192,9 +195,9 @@ async function main() {
     // Nix Store operations (Effect-TS version)
     program
         .command('store-put-effect')
-        .description('Store compatibility data in derivation-based store (Effect-TS version)')
-        .action(() => {
-        const command = storePutCommand();
+        .description('Store compatibility data in the Nix-like store (Effect-TS version)')
+        .action((options) => {
+        const command = storePutCommand(options);
         const runnable = Effect.provide(command, ShigaramiCliLive);
         NodeRuntime.runMain(runnable);
     });
@@ -354,6 +357,42 @@ async function main() {
             process.exit(1);
         }
     });
+    // Kaito commands
+    const kaito = new Command('kaito')
+        .description('Manage reproducible compatibility experiments');
+    kaito
+        .command('run')
+        .description('Run a compatibility experiment')
+        .option('--framework <pkg@ver>', 'Base framework')
+        .option('--react <ver>', 'React version')
+        .option('--lib <pkg@ver>', 'Additional library (can be used multiple times)')
+        .option('-c, --config <path>', 'Experiment config file')
+        .option('--report', 'Report result after running')
+        .action((options) => {
+        const command = kaitoRunCommand(options);
+        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        NodeRuntime.runMain(runnable);
+    });
+    kaito
+        .command('new <name>')
+        .description('Create a new experiment configuration file')
+        .option('--framework <pkg@ver>', 'Base framework')
+        .option('--react <ver>', 'React version')
+        .option('--lib <pkg@ver>', 'Additional library')
+        .action((name, options) => {
+        const command = kaitoNewCommand(name, options);
+        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        NodeRuntime.runMain(runnable);
+    });
+    kaito
+        .command('report <experiment-hash>')
+        .description('Report an experiment result to the database')
+        .action((experimentHash) => {
+        const command = kaitoReportCommand({ experimentHash });
+        const runnable = Effect.provide(command, ShigaramiCliLive.pipe(Layer.provide(KaitoLive)));
+        NodeRuntime.runMain(runnable);
+    });
+    program.addCommand(kaito);
     // If no command is provided and we're being called as an MCP server
     if (process.argv.length === 2 || process.argv.includes('--transport')) {
         // Check if this is an MCP call

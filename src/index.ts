@@ -33,6 +33,9 @@ import {
   derivationHashCommand,
   ShigaramiCliLive
 } from './cli/commands.js';
+import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand, KaitoLive } from './cli/kaito.js';
+import { Command } from 'commander';
+import { Layer } from 'effect';
 
 async function main() {
   const db = new CompatibilityDatabaseManager();
@@ -41,6 +44,8 @@ async function main() {
   // Initialize database and store
   await db.initialize();
   await store.initialize();
+
+  const program = new Command();
 
   program
     .name('shigrami')
@@ -228,9 +233,9 @@ async function main() {
   // Nix Store operations (Effect-TS version)
   program
     .command('store-put-effect')
-    .description('Store compatibility data in derivation-based store (Effect-TS version)')
-    .action(() => {
-      const command = storePutCommand();
+    .description('Store compatibility data in the Nix-like store (Effect-TS version)')
+    .action((options: any) => {
+      const command = storePutCommand(options);
       const runnable = Effect.provide(command, ShigaramiCliLive);
       NodeRuntime.runMain(runnable);
     });
@@ -399,6 +404,48 @@ async function main() {
         process.exit(1);
       }
     });
+
+  // Kaito commands
+  const kaito = new Command('kaito')
+    .description('Manage reproducible compatibility experiments');
+
+    kaito
+      .command('run')
+      .description('Run a compatibility experiment')
+      .option('--framework <pkg@ver>', 'Base framework')
+      .option('--react <ver>', 'React version')
+      .option('--lib <pkg@ver>', 'Additional library (can be used multiple times)')
+      .option('-c, --config <path>', 'Experiment config file')
+      .option('--report', 'Report result after running')
+      .action((options: any) => {
+        const command = kaitoRunCommand(options);
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+      });
+
+    kaito
+      .command('new <name>')
+      .description('Create a new experiment configuration file')
+      .option('--framework <pkg@ver>', 'Base framework')
+      .option('--react <ver>', 'React version')
+      .option('--lib <pkg@ver>', 'Additional library')
+      .action((name: string, options: any) => {
+        const command = kaitoNewCommand(name, options);
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+      });
+
+    kaito
+      .command('report <experiment-hash>')
+      .description('Report an experiment result to the database')
+      .action((experimentHash: string) => {
+        const command = kaitoReportCommand({ experimentHash });
+        const runnable = Effect.provide(command, ShigaramiCliLive);
+        NodeRuntime.runMain(runnable);
+      });
+
+  program.addCommand(kaito);
+
 
   // If no command is provided and we're being called as an MCP server
   if (process.argv.length === 2 || process.argv.includes('--transport')) {
