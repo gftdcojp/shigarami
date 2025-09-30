@@ -34,7 +34,7 @@ async function main() {
     .command('mcp')
     .description('Start MCP server for AI assistant integration')
     .option('--api-key <key>', 'API key for authentication (if required)')
-    .action(async (options) => {
+    .action(async (options: any) => {
       const server = new DepCompatMCPServer(db);
       await server.start();
     });
@@ -45,7 +45,7 @@ async function main() {
     .description('Start web dashboard server')
     .option('-p, --port <port>', 'Port to run the server on', '3000')
     .option('--host <host>', 'Host to bind to', 'localhost')
-    .action(async (options) => {
+    .action(async (options: any) => {
       const port = parseInt(options.port);
       const host = options.host;
       await setupWebServer(db, { port, host });
@@ -57,7 +57,7 @@ async function main() {
     .description('Check compatibility for a framework and packages')
     .option('-n, --node <version>', 'Node.js version')
     .option('-p, --package-manager <manager>', 'Package manager (npm/yarn/pnpm)')
-    .action(async (framework, packages, options) => {
+    .action(async (framework: string, packages: string[], options: any) => {
       const cli = new CLI(db);
       await cli.checkCompatibility(framework, packages, options);
     });
@@ -69,7 +69,7 @@ async function main() {
     .option('-f, --framework <framework>', 'Filter by framework')
     .option('-s, --status <status>', 'Filter by status (pass/fail/warn)')
     .option('-l, --limit <number>', 'Limit results', '10')
-    .action(async (query, options) => {
+    .action(async (query: string | undefined, options: any) => {
       const cli = new CLI(db);
       await cli.searchCompatibility(query, options);
     });
@@ -87,7 +87,7 @@ async function main() {
     .option('-e, --error <error>', 'Error description')
     .option('-w, --workaround <workaround>', 'Workaround description')
     .option('-v, --verified', 'Mark as verified')
-    .action(async (options) => {
+    .action(async (options: any) => {
       const cli = new CLI(db);
       await cli.reportIssue(options);
     });
@@ -106,7 +106,7 @@ async function main() {
     .command('export')
     .description('Export compatibility database')
     .option('-o, --output <file>', 'Output file', 'compatibility-db.json')
-    .action(async (options) => {
+    .action(async (options: any) => {
       const cli = new CLI(db);
       await cli.exportDatabase(options.output);
     });
@@ -129,7 +129,7 @@ async function main() {
   program
     .command('store:get <hash>')
     .description('Retrieve compatibility data from store by derivation hash')
-    .action(async (hash) => {
+    .action(async (hash: string) => {
       console.log(`🔍 Retrieving data for hash: ${hash}`);
       const data = await store.getCompatibilityData(hash);
       if (data) {
@@ -182,7 +182,7 @@ async function main() {
     .description('Export stored graph to file')
     .option('-f, --format <format>', 'Export format (json/jsonl/csv)', 'json')
     .option('-o, --output <file>', 'Output file')
-    .action(async (hash, options) => {
+    .action(async (hash: string, options: any) => {
       const format = options.format;
       const data = await store.exportGraph(hash, format);
       const outputFile = options.output || `export_${hash}.${format}`;
@@ -201,7 +201,7 @@ async function main() {
     .option('-n, --node <version>', 'Node.js version')
     .option('-p, --package-manager <manager>', 'Package manager')
     .option('-l, --libs <libs>', 'Libraries as JSON string')
-    .action(async (options) => {
+    .action(async (options: any) => {
       const builder = new DerivationBuilder();
 
       if (options.framework && options.version) {
@@ -226,7 +226,7 @@ async function main() {
         console.log(`🔢 Derivation Hash: ${hash}`);
         console.log(`📋 Derivation: ${JSON.stringify(derivation, null, 2)}`);
       } catch (error) {
-        console.error('❌ Failed to create derivation:', error.message);
+        console.error('❌ Failed to create derivation:', error instanceof Error ? error.message : String(error));
         process.exit(1);
       }
     });

@@ -26,7 +26,7 @@ export class DepCompatMCPServer {
     this.db = db;
     this.server = new Server(
       {
-        name: 'depcompat',
+        name: 'shigrami',
         version: '0.1.0',
       },
       {
@@ -143,19 +143,19 @@ export class DepCompatMCPServer {
     });
 
     // Handle tool calls
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler('tools/call', async (request) => {
       const { name, arguments: args } = request.params;
 
       try {
         switch (name) {
           case 'search_compatibility':
-            return await this.handleSearchCompatibility(args as MCPSearchCompatibilityArgs);
+            return await this.handleSearchCompatibility(args as unknown as MCPSearchCompatibilityArgs);
 
           case 'resolve_compatibility':
-            return await this.handleResolveCompatibility(args as MCPResolveCompatibilityArgs);
+            return await this.handleResolveCompatibility(args as unknown as MCPResolveCompatibilityArgs);
 
           case 'get_compatibility_issues':
-            return await this.handleGetCompatibilityIssues(args as MCPGetCompatibilityIssuesArgs);
+            return await this.handleGetCompatibilityIssues(args as unknown as MCPGetCompatibilityIssuesArgs);
 
           case 'get_compatibility_stats':
             return await this.handleGetCompatibilityStats();

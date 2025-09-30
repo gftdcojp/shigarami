@@ -146,7 +146,7 @@ export type PropertyValue =
   | boolean
   | null
   | PropertyValue[]
-  | Record<string, PropertyValue>;
+  | Record<string, any>;
 
 /**
  * Complete Property Graph: v,i,e,meta

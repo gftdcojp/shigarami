@@ -368,7 +368,7 @@ export class NixStoreManager {
         try {
           await this.getResult(hash);
         } catch (error) {
-          console.warn(`Failed to load ${hash}:`, error);
+          console.warn(`Failed to load ${hash}:`, error instanceof Error ? error.message : String(error));
         }
       }));
     } catch (error) {
