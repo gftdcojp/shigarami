@@ -165,22 +165,39 @@ shigrami derivation-hash-effect --framework next --framework-version 15.0.0
 shigrami fetch-compat https://api.example.com/compatibility
 ```
 
-### **Experimental Commands (`kaito`)**
-`kaito` enables reproducible compatibility experiments.
+### **`kaito`による実験的検証ワークフロー**
 
+`kaito` は、複雑な依存関係を持つプロジェクトの互換性を、計算科学的アプローチ（依存関係グラフのトポロジー）に基づいて効率的に検証するためのコマンドです。
+
+#### **ステップ1: グラフ解析と中心性の計算 (手動での概念)**
+まず、プロジェクトの依存関係をグラフとして捉え、中心的なパッケージ（`react`, `next`, `typescript`など）を特定します。
+
+#### **ステップ2: 階層的サンプリングによる`kaito`実験**
+
+影響度の高いパッケージから順に、階層的に検証を進めます。
+
+##### **Tier 1: 基盤パッケージのペアワイズ検証**
 ```bash
-# 新しい実験設定ファイルを作成
-shigrami kaito new "My React 19 Experiment" --framework react@19.0.0 --lib next@15.0.0
-
-# 設定ファイルを使って実験を実行し、結果を報告
-shigrami kaito run -c "My-React-19-Experiment.kaito.json" --report
-
-# 直接コマンドラインで実験を実行し、結果を報告
-shigrami kaito run --framework next@15.0.0 --react 19.0.0 --lib next-auth@5.0.0-beta.4 --report
-
-# 特定の実験ハッシュのレポートを手動で生成
-shigrami kaito report <experiment-hash>
+# 心臓部となるパッケージ間の基本的な互換性を検証
+shigrami kaito run --framework next@15.2.4 --react 19 --report
+shigrami kaito run --framework next@15.2.4 --lib typescript@^5 --report
 ```
+
+##### **Tier 2: 主要機能ブロックとの組み合わせ検証**
+```bash
+# 基盤にUIやデータ層の主要パッケージを追加して検証
+shigrami kaito run --framework next@15.2.4 --react 19 --lib @radix-ui/react-dialog@^1.1.15 --report
+shigrami kaito run --framework next@15.2.4 --react 19 --lib @tanstack/react-query@^5.45.0 --report
+```
+
+##### **Tier 3: 補助・開発ツールとの組み合わせ検証**
+```bash
+# さらに補助的ツールや開発ツールを追加して、より具体的な利用シーンを検証
+shigrami kaito run --framework next@15.2.4 --react 19 --lib @radix-ui/react-dialog@^1.1.15 --lib @testing-library/react@^16.3.0 --report
+```
+
+#### **ステップ3: 失敗パターンからのルール生成**
+`kaito` の実験結果（特に`FAIL`）が `shigrami` データベースに蓄積されると、それらを分析して共通の失敗パターンを見つけ出し、`IncidenceGraph` の決定論的ルールとして成文化します。
 
 ### **MCPサーバー起動**
 ```bash

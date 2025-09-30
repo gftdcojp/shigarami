@@ -31,6 +31,7 @@ import {
   reportIssueCommand,
   resolveDependenciesCommand,
   derivationHashCommand,
+  analyzeCommand, // Add analyzeCommand
   ShigaramiCliLive
 } from './cli/commands.js';
 import { kaitoNewCommand, kaitoReportCommand, kaitoRunCommand } from './cli/kaito-commands.js';
@@ -402,6 +403,18 @@ async function main() {
         console.error('❌ Failed to create derivation:', error instanceof Error ? error.message : String(error));
         process.exit(1);
       }
+    });
+
+  // New analyze command
+  program
+    .command('analyze')
+    .description('Analyze project dependencies and generate a kaito experiment plan')
+    .option('-p, --project-root <path>', 'Path to the project root directory')
+    .option('-o, --output <file>', 'Output file for the experiment plan (JSON)')
+    .action((options: CLIOptions) => {
+      const command = analyzeCommand(options);
+      const runnable = Effect.provide(command, ShigaramiCliLive);
+      NodeRuntime.runMain(runnable);
     });
 
   // Kaito commands

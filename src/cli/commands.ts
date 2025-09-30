@@ -15,6 +15,7 @@ import type { CompatibilityIssue } from '../types/compatibility.js';
 import { NixStoreManager as NixManager, DerivationBuilder } from '../store/derivation.js';
 import { ResolverService } from '../services/resolver.js';
 import { GitHubStoreClient } from '../store/github-store.js';
+import { DependencyAnalyzerService } from '../services/dependency-analyzer.js';
 
 /**
  * Merkle DAG Edge: effect_cli -> incidence_graph_checker_service
@@ -41,6 +42,11 @@ export class CompatibilityDatabase extends Context.Tag("CompatibilityDatabaseMan
 export class NixStore extends Context.Tag("NixStoreManager")<
   NixStore,
   NixStoreManager
+>() {}
+
+export class DependencyAnalyzer extends Context.Tag("DependencyAnalyzerService")<
+  DependencyAnalyzer,
+  DependencyAnalyzerService
 >() {}
 
 export class DependencyResolver extends Context.Tag("ResolverService")<
@@ -533,6 +539,11 @@ const NixStoreLive = Layer.effect(
   }),
 );
 
+const DependencyAnalyzerLive = Layer.succeed(
+  DependencyAnalyzer,
+  new DependencyAnalyzerService(),
+);
+
 /**
  * Creates an Effect program for the 'report-effect' command.
  *
@@ -731,8 +742,58 @@ export const derivationHashCommand = (options: any): Effect.Effect<void, Error, 
     yield* _(Console.log(`📋 Derivation: ${JSON.stringify(derivation, null, 2)}`));
   });
 
+export const analyzeCommand = (options: CLIOptions): Effect.Effect<void, Error, DependencyAnalyzer> =>
+  Effect.gen(function* (_) {
+    const projectRoot = options.projectRoot || process.cwd();
+    const analyzer = yield* _(DependencyAnalyzer);
+
+    // Read package.json to get direct dependencies for context
+    const packageJsonPath = path.join(projectRoot, 'package.json');
+    const packageJsonContent = yield* _(Effect.tryPromise({
+      try: () => fs.readFile(packageJsonPath, 'utf-8'),
+      catch: (e) => new Error(`Failed to read package.json: ${e}`),
+    }));
+    const packageJson = JSON.parse(packageJsonContent);
+
+    const scores = yield* _(analyzer.analyze(projectRoot));
+
+    yield* _(Console.log('\n📊 Dependency Analysis Results:\n'));
+    yield* _(Console.log('Top 5 High-Impact Packages (Tier 1):'));
+    scores.slice(0, 5).forEach(s => {
+        Console.log(`   - ${s.name} (Score: ${s.score})`);
+    });
+
+    const plan = analyzer.generatePlan(scores, packageJson);
+
+    yield* _(Console.log('\n🧪 Recommended Kaito Experiments:\n'));
+
+    if (plan.tier1.length > 0) {
+      yield* _(Console.log('Tier 1: Foundational Pairs'));
+      plan.tier1.forEach(args => {
+        Console.log(`  - shigrami kaito run ${args.join(' ')}`);
+      });
+    }
+
+    if (plan.tier2.length > 0) {
+      yield* _(Console.log('\nTier 2: Core Feature Blocks'));
+      plan.tier2.forEach(args => {
+        Console.log(`  - shigrami kaito run ${args.join(' ')}`);
+      });
+    }
+
+    if (options.output) {
+      const outputPath = path.resolve(options.output);
+      yield* _(Effect.tryPromise({
+        try: () => fs.writeFile(outputPath, JSON.stringify(plan, null, 2)),
+        catch: (e) => new Error(`Failed to write experiment plan to ${outputPath}: ${e}`),
+      }));
+      yield* _(Console.log(`\n✅ Experiment plan saved to: ${outputPath}`));
+    }
+  });
+
 export const ShigaramiCliLive = IncidenceGraphCheckerLive.pipe(
   Layer.provideMerge(CompatibilityDatabaseLive),
   Layer.provideMerge(NixStoreLive),
+  Layer.provideMerge(DependencyAnalyzerLive), // Add new service
   Layer.provide(NodeContext.layer),
 );
