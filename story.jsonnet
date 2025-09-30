@@ -70,10 +70,10 @@ local nodes = {
   // CLI tools - developer interface layer
   cli_tools: {
     id: 'cli_tools',
-    responsibility: 'Command-line interface for compatibility checking',
+    responsibility: 'Command-line interface for compatibility checking and experimental runs',
     dependencies: ['data_processor'],
-    provides: ['cli_commands', 'automation'],
-    merkle_hash: std.md5('cli_tools_v1'),
+    provides: ['cli_commands', 'automation', 'kaito_experiments'],
+    merkle_hash: std.md5('cli_tools_v2'),
     subgraph: import 'subgraphs/cli.jsonnet',
   },
 

@@ -17,7 +17,7 @@ export const kaitoRunCommand = (options: any): Effect.Effect<void, Error, Compat
   Effect.gen(function* (_) {
     const startTime = Date.now();
 
-    const shigramiDir = path.join(os.homedir(), '.shigrami');
+    const shigramiDir = path.join(os.homedir(), '.shigarami');
     yield* _(Effect.tryPromise(() => fs.mkdir(shigramiDir, { recursive: true })));
 
     let config: KaitoConfig;
@@ -51,9 +51,8 @@ export const kaitoRunCommand = (options: any): Effect.Effect<void, Error, Compat
     yield* _(Console.log(`   Location: ${experimentDir}`));
 
     // Clean up existing experiment
-    try {
-        fs.rm(experimentDir, { recursive: true, force: true });
-    } catch {}
+    yield* _(Effect.tryPromise(() => fs.rm(experimentDir, { recursive: true, force: true }))
+      .pipe(Effect.catchAll(() => Effect.succeed(undefined)))); // Ignore if dir doesn't exist or is already empty
 
     yield* _(Effect.tryPromise(() => fs.mkdir(experimentDir, { recursive: true })));
 
@@ -165,7 +164,7 @@ export const kaitoNewCommand = (name: string, options: any): Effect.Effect<void,
 
 export const kaitoReportCommand = (options: { experimentHash: string }): Effect.Effect<void, Error, CompatibilityDatabase> =>
   Effect.gen(function* (_) {
-    const shigramiDir = path.join(os.homedir(), '.shigrami');
+    const shigramiDir = path.join(os.homedir(), '.shigarami');
     const resultPath = path.join(shigramiDir, 'results', `${options.experimentHash}.json`);
 
     const resultString = yield* _(Effect.tryPromise(() => fs.readFile(resultPath, 'utf-8')));

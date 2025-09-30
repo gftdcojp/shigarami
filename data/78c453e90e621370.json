@@ -1,0 +1,16 @@
+{
+  "id": "78c453e90e621370",
+  "framework": "next",
+  "version": "15.0.0",
+  "react": "19.0.0",
+  "libs": {
+    "next-auth": "5.0.0-beta.4"
+  },
+  "status": "fail",
+  "error": "npm error code ERESOLVE\nnpm error ERESOLVE unable to resolve dependency tree\nnpm error\nnpm error While resolving: kaito-experiment-b9c7e1b955aef5ff@0.1.0\nnpm error Found: react@19.0.0\nnpm error node_modules/react\nnpm error   react@\"19.0.0\" from the root project\nnpm error\nnpm error Could not resolve dependency:\nnpm error peer react@\"^18.2.0 || 19.0.0-rc-65a56d0e-20241020\" from next@15.0.0\nnpm error node_modules/next\nnpm error   next@\"15.0.0\" from the root project\nnpm error\nnpm error Fix the upstr",
+  "workaround": "No workaround provided in this automated report.",
+  "reportedAt": "2025-09-30T09:20:31.278Z",
+  "verified": false,
+  "source": "manual",
+  "merkleHash": "28a11faa045920645a45048761f3c6c27a0f69e9b0e7716500f75abc7f3fb918"
+}

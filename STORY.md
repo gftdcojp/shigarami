@@ -165,6 +165,23 @@ shigrami derivation-hash-effect --framework next --framework-version 15.0.0
 shigrami fetch-compat https://api.example.com/compatibility
 ```
 
+### **Experimental Commands (`kaito`)**
+`kaito` enables reproducible compatibility experiments.
+
+```bash
+# 新しい実験設定ファイルを作成
+shigrami kaito new "My React 19 Experiment" --framework react@19.0.0 --lib next@15.0.0
+
+# 設定ファイルを使って実験を実行し、結果を報告
+shigrami kaito run -c "My-React-19-Experiment.kaito.json" --report
+
+# 直接コマンドラインで実験を実行し、結果を報告
+shigrami kaito run --framework next@15.0.0 --react 19.0.0 --lib next-auth@5.0.0-beta.4 --report
+
+# 特定の実験ハッシュのレポートを手動で生成
+shigrami kaito report <experiment-hash>
+```
+
 ### **MCPサーバー起動**
 ```bash
 shigrami mcp
@@ -263,6 +280,7 @@ interface CompatibilityDerivation {
 - ✅ インシデントグラフ検証
 - ✅ Nix Storeライクストレージ
 - ✅ 型安全なエラーハンドリング
+- ✅ `kaito`コマンド (実験の実行、設定ファイルの生成、結果報告)
 
 ### **テスト実行例**
 ```bash
