@@ -21,7 +21,7 @@ export class CompatibilityDatabaseManager {
   private cache: Map<string, CompatibilityIssue> = new Map();
   private merkleTree: Map<string, string> = new Map();
 
-  constructor(dataDir: string = './data') {
+  constructor(dataDir: string = './store') {
     this.dataDir = dataDir;
   }
 

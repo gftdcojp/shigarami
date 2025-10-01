@@ -135,7 +135,7 @@ const entry = yield* _(
 
 ```bash
 # 互換性チェック
-shigrami check-graph-effect --rules-file data/compat-incidence-graph.json
+shigrami check-graph-effect --rules-file store/compat-incidence-graph.json
 
 # データベース統計
 shigrami stats-effect
@@ -302,7 +302,7 @@ interface CompatibilityDerivation {
 ### **テスト実行例**
 ```bash
 # 互換性違反の検出
-$ node dist/index.js check-graph-effect --rules-file data/compat-incidence-graph.json
+$ node dist/index.js check-graph-effect --rules-file store/compat-incidence-graph.json
 🔎 Running incidence graph check for project at: /path/to/project
    Found 6 total dependencies.
    Using environment key: env:node20-linux-x64-glibc-2.35

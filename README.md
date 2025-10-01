@@ -78,9 +78,9 @@ depcompat/
 │   ├── mcp/           # Model Context Protocol server
 │   ├── web/           # Web dashboard
 │   ├── cli/           # Command line interface
-│   ├── data/          # Compatibility database
+│   ├── store/         # Compatibility database
 │   └── types/         # TypeScript type definitions
-├── data/              # Compatibility issue database
+├── store/              # Compatibility issue database
 ├── docs/              # Detailed issue documentation
 ├── .github/
 │   ├── workflows/     # CI/CD pipelines
@@ -127,7 +127,7 @@ npm run dev
 
 ### Adding Compatibility Data
 
-Compatibility issues are stored as JSON files in the `data/` directory:
+Compatibility issues are stored as JSON files in the `store/` directory:
 
 ```json
 {

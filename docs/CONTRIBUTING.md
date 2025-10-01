@@ -18,7 +18,7 @@ The easiest way to contribute is by reporting compatibility issues you encounter
 If you have verified compatibility information:
 
 1. Fork the repository
-2. Add your compatibility data to the appropriate JSON files in `data/`
+2. Add your compatibility data to the appropriate JSON files in `store/`
 3. Follow the [data schema](./SCHEMA.md)
 4. Submit a pull request
 
