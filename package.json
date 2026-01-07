@@ -56,7 +56,7 @@
     "@effect/platform": "^0.92.0",
     "@effect/platform-node": "^0.98.0",
     "@effect/schema": "^0.75.5",
-    "@modelcontextprotocol/sdk": "^0.4.0",
+    "@modelcontextprotocol/sdk": "^1.25.2",
     "@types/semver": "^7.7.1",
     "commander": "^14.0.1",
     "effect": "^3.18.0",
